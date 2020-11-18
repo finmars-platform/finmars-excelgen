@@ -1,0 +1,9 @@
+.idea
+file.pdf
+data-default.json
+page.html
+portal_files
+
+app.pyc
+
+__pycache__
