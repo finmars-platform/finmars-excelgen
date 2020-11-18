@@ -47,8 +47,6 @@ def application(request):
 
     requestData = yaml.safe_load(request.data)
 
-    entityType = requestData['entityType']
-    settings = requestData['settings']
     contentSettings = requestData['contentSettings']
     content = requestData['content']
 
