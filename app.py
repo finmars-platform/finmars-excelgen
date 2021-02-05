@@ -36,8 +36,14 @@ logger.setLevel(logging.DEBUG)
 
 @Request.application
 def application(request):
+
+    if request.method == 'GET':
+        return Response("Excel generator is online")
+
     if request.method != 'POST':
         return
+
+    st = time.perf_counter()
 
     # logger.info("Request data %s" % request.data)
 
@@ -50,7 +56,7 @@ def application(request):
     contentSettings = requestData['contentSettings']
     content = requestData['content']
 
-    print("Create empty workbook")
+    print("Creating empty workbook")
     wb = Workbook()
     ws = wb.active
 
@@ -121,9 +127,12 @@ def application(request):
     #
     # os.remove('report.xslx')
 
+
     response = Response(save_virtual_workbook(wb),
                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers=headers
                         )
+
+    print('generating excel done: %s', "{:3.3f}".format(time.perf_counter() - st))
 
     # file.close()
 
