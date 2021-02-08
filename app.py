@@ -40,33 +40,26 @@ def application(request):
 
     st = time.perf_counter()
 
-    # logger.info("Request data %s" % request.data)
+    source_st = time.perf_counter()
 
-    # print('request.data %s' %request.data)
-
-    # requestData = json.loads(request.data)
-
-    requestData = yaml.safe_load(request.data)
+    # requestData = yaml.safe_load(request.data)
+    requestData = json.loads(request.data)
 
     contentSettings = requestData['contentSettings']
     content = requestData['content']
 
-    print("Creating empty workbook")
+    logger.info('preparing source data done: %s', "{:3.3f}".format(time.perf_counter() - source_st))
+
+    wb_st = time.perf_counter()
+
     wb = Workbook()
     ws = wb.new_sheet("General")
 
-    columns = contentSettings["columns"]
+    logger.info('generating workbook done: %s', "{:3.3f}".format(time.perf_counter() - wb_st))
 
-    # colorFill = PatternFill(start_color='F05A22',
-    #                         end_color='F05A22',
-    #                         fill_type='solid')
-    #
-    # thin_border = Border(left=Side(style='thin'),
-    #                      right=Side(style='thin'),
-    #                      top=Side(style='thin'),
-    #                      bottom=Side(style='thin'))
-    #
-    # ft = Font(color="FFFFFF", name='Arial', size=14)
+    header_st = time.perf_counter()
+
+    columns = contentSettings["columns"]
 
     column_index = 0
     for column in columns:
@@ -75,14 +68,9 @@ def application(request):
         ws[1][column_index + 1].style.fill.background = Color(240, 90, 34)
         column_index = column_index + 1
 
+    logger.info('generating header done: %s', "{:3.3f}".format(time.perf_counter() - header_st))
 
-    # for col in ws.iter_cols(min_row=1, max_col=len(columns), max_row=1):
-    #     for cell in col:
-    #         cell.fill = colorFill
-    #         cell.font = ft
-    #         cell.border = thin_border
-
-    print("Adding data")
+    data_st = time.perf_counter()
 
     row_index = 1 # first for header
 
@@ -114,18 +102,13 @@ def application(request):
 
             row_index = row_index + 1
 
+    logger.info('generating data done: %s', "{:3.3f}".format(time.perf_counter() - data_st))
 
-    print("Saving to excel file")
-
-    # wb.save(filename='report.xlsx')
+    saving_st = time.perf_counter()
 
     headers = Headers()
     headers.add('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     headers.add('Content-Disposition', 'attachment', filename='report.xslx')
-
-    # file = open('report.xslx')
-    #
-    # os.remove('report.xslx')
 
     stream = BytesIO()
     wb.save(stream)
@@ -134,7 +117,9 @@ def application(request):
                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers=headers
                         )
 
-    print('generating excel done: %s', "{:3.3f}".format(time.perf_counter() - st))
+    logger.info('generating response done: %s', "{:3.3f}".format(time.perf_counter() - saving_st))
+
+    logger.info('generating excel done: %s', "{:3.3f}".format(time.perf_counter() - st))
 
     # file.close()
 
