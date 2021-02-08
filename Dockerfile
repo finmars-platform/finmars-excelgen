@@ -8,7 +8,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends bu
 
 RUN apt-get install -y python3-pip
 RUN pip3 install werkzeug executor gunicorn
-RUN pip3 install openpyxl
+RUN pip3 install PyExcelerate
 RUN pip3 install pyyaml
 
 WORKDIR /var/www/excelgen

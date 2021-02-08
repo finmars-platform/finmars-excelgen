@@ -6,6 +6,7 @@ import time
 
 import json
 import yaml
+from io import BytesIO
 
 
 from werkzeug.wsgi import wrap_file
@@ -15,13 +16,7 @@ from executor import execute
 from werkzeug.datastructures import Headers
 
 
-from openpyxl import Workbook
-from openpyxl.styles import Alignment
-from openpyxl.worksheet.dimensions import RowDimension
-from openpyxl.worksheet.table import Table, TableStyleInfo
-from openpyxl.styles import Color, PatternFill, Font, Border, Side
-from openpyxl.styles import colors
-from openpyxl.writer.excel import save_virtual_workbook
+from pyexcelerate import Workbook, Color, Style, Font, Fill, Format
 
 
 import logging
@@ -58,61 +53,66 @@ def application(request):
 
     print("Creating empty workbook")
     wb = Workbook()
-    ws = wb.active
+    ws = wb.new_sheet("General")
 
     columns = contentSettings["columns"]
 
-    column_names = []
+    # colorFill = PatternFill(start_color='F05A22',
+    #                         end_color='F05A22',
+    #                         fill_type='solid')
+    #
+    # thin_border = Border(left=Side(style='thin'),
+    #                      right=Side(style='thin'),
+    #                      top=Side(style='thin'),
+    #                      bottom=Side(style='thin'))
+    #
+    # ft = Font(color="FFFFFF", name='Arial', size=14)
 
-    colorFill = PatternFill(start_color='F05A22',
-                            end_color='F05A22',
-                            fill_type='solid')
-
-    thin_border = Border(left=Side(style='thin'),
-                         right=Side(style='thin'),
-                         top=Side(style='thin'),
-                         bottom=Side(style='thin'))
-
-    ft = Font(color="FFFFFF", name='Arial', size=14)
-
-
+    column_index = 0
     for column in columns:
-        column_names.append(column['name'])
+        ws[1][column_index + 1].value = column['name']
+        ws[1][column_index + 1].style.font.color = Color(255, 255, 255)
+        ws[1][column_index + 1].style.fill.background = Color(240, 90, 34)
+        column_index = column_index + 1
 
-    print("Adding columns")
-    ws.append(column_names)
 
-    for col in ws.iter_cols(min_row=1, max_col=len(columns), max_row=1):
-        for cell in col:
-            cell.fill = colorFill
-            cell.font = ft
-            cell.border = thin_border
+    # for col in ws.iter_cols(min_row=1, max_col=len(columns), max_row=1):
+    #     for cell in col:
+    #         cell.fill = colorFill
+    #         cell.font = ft
+    #         cell.border = thin_border
 
     print("Adding data")
 
-    index = 0
+    row_index = 1 # first for header
 
     for row in content:
 
-        row_data = []
+        column_index = 0
+
         skip = False
 
         if '___type' in row and row['___type'] == 'subtotal':
             skip = True
 
-        for column in columns:
-
-            try:
-
-                row_data.append(row[column["key"]])
-
-            except Exception as e:
-                row_data.append(None)
-
         if not skip:
-            ws.append(row_data)
 
-        index = index + 1
+            for column in columns:
+
+                value = None
+
+                try:
+
+                    value = row[column["key"]]
+
+                except Exception as e:
+                    value = None
+
+                ws[row_index + 1][column_index + 1] = value
+
+                column_index = column_index + 1
+
+            row_index = row_index + 1
 
 
     print("Saving to excel file")
@@ -127,8 +127,10 @@ def application(request):
     #
     # os.remove('report.xslx')
 
+    stream = BytesIO()
+    wb.save(stream)
 
-    response = Response(save_virtual_workbook(wb),
+    response = Response(stream.getvalue(),
                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers=headers
                         )
 
