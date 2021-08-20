@@ -91,7 +91,11 @@ def application(request):
 
                 try:
 
-                    value = row[column["key"]]
+                    if column["key"] + '_object' in row:
+                        value = row[column["key"] + '_object']['user_code']
+                    else:
+
+                        value = row[column["key"]]
 
                 except Exception as e:
                     value = None
