@@ -47,6 +47,13 @@ def application(request):
 
     contentSettings = requestData['contentSettings']
     content = requestData['content']
+    entityType = requestData['entityType']
+
+    isReport = False
+
+    if entityType == 'pl-report' or entityType == 'balance-report' or entityType == 'transaction-report':
+        isReport = True
+
 
     logger.info('preparing source data done: %s', "{:3.3f}".format(time.perf_counter() - source_st))
 
@@ -95,7 +102,41 @@ def application(request):
                         value = row[column["key"] + '_object']['user_code']
                     else:
 
-                        value = row[column["key"]]
+                        if isReport:
+                            value = row[column["key"]]
+                        else:
+
+                            if 'attributes.' in column["key"]:
+
+                                attribute_type_user_code = column["key"].split('attributes.')[1]
+
+                                attribute = None
+                                result_value = None
+
+                                for attr in row['attributes']:
+
+                                    if attr['attribute_type_object']['user_code'] == attribute_type_user_code:
+
+                                        if attr['attribute_type_object']['value_type'] == 10:
+                                            result_value = attr['value_string']
+
+                                        if attr['attribute_type_object']['value_type'] == 20:
+                                            result_value = attr['value_float']
+
+                                        if attr['attribute_type_object']['value_type'] == 30:
+
+                                            if attr['classifier_object']:
+                                                result_value = attr['classifier_object']['name']
+
+                                        if attr['attribute_type_object']['value_type'] == 40:
+                                            result_value = attr['value_date']
+
+
+                                value = result_value
+
+                            else :
+                                value = row[column["key"]]
+
 
                 except Exception as e:
                     value = None
